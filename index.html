@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Aurora Construction Estimate & Invoice</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="app-header">
+        <div class="brand">
+          <div class="brand-logo">A</div>
+          <div class="brand-text">
+            <h1>Aurora Construction Estimator &amp; Invoice</h1>
+            <p>By Aurora Design &mdash; Smart takeoff, materials and client billing</p>
+          </div>
+        </div>
+        <div class="header-note">
+          <strong>Note:</strong> All values are local to this browser. Export or save manually for records.
+        </div>
+      </header>
+
+      <main class="app-main">
+        <nav class="tabs">
+          <button class="tab-button active" data-tab="estimateTab">Estimate &amp; Materials</button>
+          <button class="tab-button" data-tab="quantityTab">Quantity &amp; Price</button>
+          <button class="tab-button" data-tab="invoiceTab">Invoice Preview</button>
+          <button class="tab-button" data-tab="auroraTab">Aurora Materials</button>
+        </nav>
+
+        <section id="estimateTab" class="tab active">
+          <div class="grid-main">
+            <div class="card">
+              <header class="card-header">
+                <h2>Project &amp; Client Details</h2>
+              </header>
+              <div class="form-grid">
+                <label>
+                  <span>Project Name</span>
+                  <input id="projectName" type="text" placeholder="e.g. Residential House Renovation" />
+                </label>
+                <label>
+                  <span>Client Name</span>
+                  <input id="clientName" type="text" placeholder="e.g. John Doe" />
+                </label>
+                <label>
+                  <span>Client Address</span>
+                  <textarea id="clientAddress" rows="2" placeholder="Street, City, State, ZIP"></textarea>
+                </label>
+                <label>
+                  <span>Project Location</span>
+                  <textarea id="projectLocation" rows="2" placeholder="Job site address"></textarea>
+                </label>
+                <label>
+                  <span>Project Area (sq ft)</span>
+                  <input id="projectArea" type="number" min="0" step="0.01" placeholder="e.g. 1290" />
+                </label>
+                <label>
+                  <span>Labor Rate per Day</span>
+                  <div class="input-prefix">
+                    <span class="prefix">₹</span>
+                    <input id="laborRate" type="number" min="0" step="0.01" placeholder="e.g. 2500" />
+                  </div>
+                </label>
+                <label>
+                  <span>Estimated Labor Days</span>
+                  <input id="laborDays" type="number" min="0" step="0.5" placeholder="e.g. 15" />
+                </label>
+                <label>
+                  <span>Overhead &amp; Profit (%)</span>
+                  <input id="markupPercent" type="number" min="0" step="0.5" value="15" />
+                </label>
+                <label>
+                  <span>Tax Rate (%)</span>
+                  <input id="taxPercent" type="number" min="0" step="0.5" value="5" />
+                </label>
+              </div>
+            </div>
+
+            <div class="card materials-card">
+              <header class="card-header">
+                <h2>Materials &amp; Quantities</h2>
+                <button id="addMaterialBtn" class="btn btn-ghost">Add Material</button>
+              </header>
+
+              <div class="materials-quick">
+                <p class="small-label">Quick estimate helpers (optional):</p>
+                <div class="quick-grid">
+                  <button class="chip" data-type="brick">Bricks / Blocks</button>
+                  <button class="chip" data-type="cement">Cement Bags</button>
+                  <button class="chip" data-type="steel">Steel (tons)</button>
+                  <button class="chip" data-type="paint">Paint (liters)</button>
+                </div>
+                <p class="helper-text">
+                  Select a helper and enter project area to auto-add an approximate quantity line (you can edit it).
+                </p>
+              </div>
+
+              <div class="materials-table-wrapper">
+                <table class="materials-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 28%">Item</th>
+                      <th style="width: 10%">Unit</th>
+                      <th style="width: 15%">Qty</th>
+                      <th style="width: 18%">Unit Cost</th>
+                      <th style="width: 18%">Line Total</th>
+                      <th style="width: 11%"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="materialsBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card summary-card">
+            <header class="card-header">
+              <h2>Estimate Summary</h2>
+              <button id="syncInvoiceBtn" class="btn btn-primary">Update Invoice Tab</button>
+            </header>
+            <div class="summary-grid">
+              <div class="summary-block">
+                <h3>Cost Breakdown</h3>
+                <ul>
+                  <li>
+                    <span>Material Subtotal</span>
+                    <strong id="materialSubtotalLabel">₹0.00</strong>
+                  </li>
+                  <li>
+                    <span>Labor Cost</span>
+                    <strong id="laborCostLabel">₹0.00</strong>
+                  </li>
+                  <li>
+                    <span>Overhead &amp; Profit</span>
+                    <strong id="markupLabel">₹0.00</strong>
+                  </li>
+                  <li>
+                    <span>Subtotal (Before Tax)</span>
+                    <strong id="subtotalLabel">₹0.00</strong>
+                  </li>
+                  <li>
+                    <span>Tax</span>
+                    <strong id="taxLabel">₹0.00</strong>
+                  </li>
+                </ul>
+              </div>
+              <div class="summary-block total-block">
+                <h3>Estimated Total</h3>
+                <div class="total-amount" id="grandTotalLabel">₹0.00</div>
+                <p class="helper-text">
+                  This total is used on the Invoice tab. You can still edit description and terms there.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="invoiceTab" class="tab">
+          <div class="card invoice-card">
+            <header class="card-header">
+              <h2>Invoice</h2>
+              <div class="invoice-actions">
+                <button id="printInvoiceBtn" class="btn btn-ghost">Print / Save as PDF</button>
+              </div>
+            </header>
+
+            <div class="invoice">
+              <div class="invoice-header">
+                <div>
+                  <h1>INVOICE</h1>
+                  <p class="invoice-tagline">Construction works estimate for client approval</p>
+                </div>
+                <div class="invoice-meta">
+                  <label>
+                    <span>Invoice #</span>
+                    <input id="invoiceNumber" type="text" placeholder="e.g. INV-2025-001" />
+                  </label>
+                  <label>
+                    <span>Invoice Date</span>
+                    <input id="invoiceDate" type="date" />
+                  </label>
+                  <label>
+                    <span>Due Date</span>
+                    <input id="invoiceDueDate" type="date" />
+                  </label>
+                </div>
+              </div>
+
+              <div class="invoice-two-col">
+                <div>
+                  <h3>Bill To</h3>
+                  <p id="invoiceClientName" class="invoice-strong">Client Name</p>
+                  <p id="invoiceClientAddress" class="invoice-text">Client address</p>
+                </div>
+                <div>
+                  <h3>Project</h3>
+                  <p id="invoiceProjectName" class="invoice-strong">Project Name</p>
+                  <p id="invoiceProjectLocation" class="invoice-text">Project location</p>
+                </div>
+              </div>
+
+              <div class="invoice-description">
+                <label>
+                  <span>Scope / Work Description</span>
+                  <textarea
+                    id="invoiceDescription"
+                    rows="3"
+                    placeholder="Short description of work, stages, inclusions and exclusions"
+                  ></textarea>
+                </label>
+              </div>
+
+              <table class="invoice-table">
+                <thead>
+                  <tr>
+                    <th style="width: 46%">Item</th>
+                    <th style="width: 12%">Qty</th>
+                    <th style="width: 18%">Unit Cost</th>
+                    <th style="width: 24%">Line Total</th>
+                  </tr>
+                </thead>
+                <tbody id="invoiceItemsBody"></tbody>
+              </table>
+
+              <div class="invoice-totals">
+                <div class="invoice-totals-left">
+                  <label>
+                    <span>Payment Terms</span>
+                    <textarea
+                      id="invoiceTerms"
+                      rows="3"
+                      placeholder="e.g. 50% advance, 50% on completion; payment due within 7 days, etc."
+                    ></textarea>
+                  </label>
+                </div>
+                <div class="invoice-totals-right">
+                  <div class="totals-row">
+                    <span>Material Subtotal</span>
+                    <span id="invoiceMaterialSubtotal">₹0.00</span>
+                  </div>
+                  <div class="totals-row">
+                    <span>Labor</span>
+                    <span id="invoiceLabor">₹0.00</span>
+                  </div>
+                  <div class="totals-row">
+                    <span>Overhead &amp; Profit</span>
+                    <span id="invoiceMarkup">₹0.00</span>
+                  </div>
+                  <div class="totals-row">
+                    <span>Tax</span>
+                    <span id="invoiceTax">₹0.00</span>
+                  </div>
+                  <div class="totals-row grand">
+                    <span>Total</span>
+                    <span id="invoiceTotal">₹0.00</span>
+                  </div>
+                </div>
+              </div>
+
+              <p class="invoice-footer-note">
+                This document is an <strong>estimate</strong> based on current information. Final cost may vary due to
+                site conditions, design changes, and material price fluctuations.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section id="quantityTab" class="tab">
+          <div class="card quantity-card">
+            <header class="card-header">
+              <h2>Quantity &amp; Price Summary</h2>
+              <div class="invoice-actions">
+                <button id="qtyRefreshBtn" class="btn btn-ghost btn-small">Refresh from Estimate</button>
+                <button id="qtyToInvoiceBtn" class="btn btn-primary btn-small">Go to Invoice</button>
+              </div>
+            </header>
+            <p class="helper-text">
+              This tab shows a BOQ-style view of all items from your <strong>Estimate &amp; Materials</strong> tab with
+              quantities, unit rates and amounts. Edit items in the Estimate tab, then click
+              <strong>Refresh from Estimate</strong>.
+            </p>
+            <div class="materials-table-wrapper">
+              <table class="materials-table">
+                <thead>
+                  <tr>
+                    <th style="width: 36%">Item</th>
+                    <th style="width: 10%">Unit</th>
+                    <th style="width: 14%">Qty</th>
+                    <th style="width: 18%">Unit Rate (₹)</th>
+                    <th style="width: 22%">Amount (₹)</th>
+                  </tr>
+                </thead>
+                <tbody id="qtyBody"></tbody>
+              </table>
+            </div>
+            <div class="summary-grid">
+              <div class="summary-block">
+                <h3>Totals (from Estimate)</h3>
+                <ul>
+                  <li>
+                    <span>Material Subtotal</span>
+                    <strong id="qtyMaterialSubtotalLabel">₹0.00</strong>
+                  </li>
+                  <li>
+                    <span>Labor Cost</span>
+                    <strong id="qtyLaborLabel">₹0.00</strong>
+                  </li>
+                  <li>
+                    <span>Overhead &amp; Profit</span>
+                    <strong id="qtyMarkupLabel">₹0.00</strong>
+                  </li>
+                  <li>
+                    <span>Tax</span>
+                    <strong id="qtyTaxLabel">₹0.00</strong>
+                  </li>
+                </ul>
+              </div>
+              <div class="summary-block total-block">
+                <h3>Grand Total</h3>
+                <div class="total-amount" id="qtyGrandTotalLabel">₹0.00</div>
+                <p class="helper-text">
+                  These values always mirror your main Estimate Summary. Use <strong>Go to Invoice</strong> to see the
+                  formatted client invoice.
+                </p>
+              </div>
+            </div>
+            <div class="quantity-invoice">
+              <h3>Quantity Invoice (BOQ)</h3>
+              <div class="form-grid">
+                <label>
+                  <span>Quantity Invoice #</span>
+                  <input id="qtyInvoiceNumber" type="text" placeholder="e.g. QTY-2025-001" />
+                </label>
+                <label>
+                  <span>Date</span>
+                  <input id="qtyInvoiceDate" type="date" />
+                </label>
+                <label>
+                  <span>Notes</span>
+                  <textarea
+                    id="qtyInvoiceNotes"
+                    rows="2"
+                    placeholder="Internal notes for quantity-based billing or BOQ reference"
+                  ></textarea>
+                </label>
+              </div>
+              <button id="qtyPrintBtn" class="btn btn-ghost btn-small">Print Quantity Invoice (BOQ)</button>
+            </div>
+          </div>
+        </section>
+
+        <section id="auroraTab" class="tab">
+          <div class="card aurora-card">
+            <header class="card-header">
+              <h2>Aurora Design &mdash; Company &amp; Material Library</h2>
+            </header>
+            <div class="aurora-grid">
+              <div class="aurora-company">
+                <h3>Company Profile</h3>
+                <div class="form-grid company-grid">
+                  <label>
+                    <span>Company Name</span>
+                    <input id="companyName" type="text" value="Aurora Design" />
+                  </label>
+                  <label>
+                    <span>Tagline</span>
+                    <input id="companyTagline" type="text" value="Construction &amp; Interior Solutions" />
+                  </label>
+                  <label>
+                    <span>Address</span>
+                    <textarea
+                      id="companyAddress"
+                      rows="2"
+                      placeholder="Office address for your invoices"
+                    ></textarea>
+                  </label>
+                  <label>
+                    <span>Phone</span>
+                    <input id="companyPhone" type="text" placeholder="+91 -" />
+                  </label>
+                  <label>
+                    <span>Email</span>
+                    <input id="companyEmail" type="email" placeholder="info@auroradesign.in" />
+                  </label>
+                  <label>
+                    <span>GST / Tax ID</span>
+                    <input id="companyTaxId" type="text" placeholder="e.g. GSTIN / VAT" />
+                  </label>
+                </div>
+                <p class="helper-text">
+                  These details can be copied into the invoice header or printed alongside when sending to a client.
+                </p>
+              </div>
+              <div class="aurora-library">
+                <h3>Standard Construction Materials (Templates)</h3>
+                <p class="helper-text">
+                  Click any item to add it into your <strong>Estimate &amp; Materials</strong> table, then adjust
+                  quantities and rates.
+                </p>
+                <div class="library-columns">
+                  <div class="library-group">
+                    <h4>Excavation, Foundation &amp; Concrete</h4>
+                    <button class="material-template" data-name="Site clearing &amp; layout" data-unit="lump sum">
+                      Site clearing &amp; layout
+                    </button>
+                    <button class="material-template" data-name="Excavation for foundation" data-unit="cu m">
+                      Excavation for foundation
+                    </button>
+                    <button class="material-template" data-name="Backfilling &amp; compaction" data-unit="cu m">
+                      Backfilling &amp; compaction
+                    </button>
+                    <button class="material-template" data-name="PCC 1:4:8 (below footing)" data-unit="cu m">
+                      PCC 1:4:8 (below footing)
+                    </button>
+                    <button class="material-template" data-name="RCC 1:1.5:3 (columns/beams/slab)" data-unit="cu m">
+                      RCC 1:1.5:3 (columns / beams / slab)
+                    </button>
+                    <button class="material-template" data-name="Reinforcement steel Fe500" data-unit="kg">
+                      Reinforcement steel Fe500
+                    </button>
+                    <button class="material-template" data-name="M-Sand for concrete" data-unit="cu ft">
+                      M-Sand for concrete
+                    </button>
+                    <button class="material-template" data-name="40 mm aggregate" data-unit="cu ft">
+                      40 mm aggregate
+                    </button>
+                    <button class="material-template" data-name="20 mm aggregate" data-unit="cu ft">
+                      20 mm aggregate
+                    </button>
+                    <button class="material-template" data-name="Damp proof course (DPC)" data-unit="sq ft">
+                      Damp proof course (DPC)
+                    </button>
+                    <button class="material-template" data-name="Anti-termite treatment" data-unit="sq ft">
+                      Anti-termite treatment
+                    </button>
+                  </div>
+                  <div class="library-group">
+                    <h4>Masonry &amp; Plaster</h4>
+                    <button class="material-template" data-name="Common burnt clay bricks" data-unit="pcs">
+                      Common burnt clay bricks
+                    </button>
+                    <button class="material-template" data-name="Concrete blocks (6&quot;)" data-unit="pcs">
+                      Concrete blocks 6"
+                    </button>
+                    <button class="material-template" data-name="Cement for masonry" data-unit="bag">
+                      Cement for masonry
+                    </button>
+                    <button class="material-template" data-name="M-Sand for masonry" data-unit="cu ft">
+                      M-Sand for masonry
+                    </button>
+                    <button class="material-template" data-name="Internal plaster" data-unit="sq ft">
+                      Internal plaster
+                    </button>
+                    <button class="material-template" data-name="External plaster" data-unit="sq ft">
+                      External plaster
+                    </button>
+                    <button class="material-template" data-name="Lintels over openings" data-unit="rft">
+                      RCC lintels over openings
+                    </button>
+                    <button class="material-template" data-name="Parapet wall" data-unit="rft">
+                      Parapet wall
+                    </button>
+                  </div>
+                  <div class="library-group">
+                    <h4>Flooring &amp; Finishes</h4>
+                    <button class="material-template" data-name="Vitrified floor tiles" data-unit="sq ft">
+                      Vitrified floor tiles
+                    </button>
+                    <button class="material-template" data-name="Ceramic wall tiles" data-unit="sq ft">
+                      Ceramic wall tiles
+                    </button>
+                    <button class="material-template" data-name="Granite kitchen platform" data-unit="rft">
+                      Granite kitchen platform
+                    </button>
+                    <button class="material-template" data-name="Wall putty" data-unit="kg">
+                      Wall putty
+                    </button>
+                    <button class="material-template" data-name="Interior emulsion paint" data-unit="sq ft">
+                      Interior emulsion paint
+                    </button>
+                    <button class="material-template" data-name="Exterior weatherproof paint" data-unit="sq ft">
+                      Exterior weatherproof paint
+                    </button>
+                    <button class="material-template" data-name="Ceiling paint" data-unit="sq ft">
+                      Ceiling paint
+                    </button>
+                    <button class="material-template" data-name="Skirting" data-unit="rft">
+                      Skirting
+                    </button>
+                  </div>
+                  <div class="library-group">
+                    <h4>Doors, Windows, Services &amp; Manpower</h4>
+                    <button class="material-template" data-name="Main door (teak wood)" data-unit="nos">
+                      Main door (teak wood)
+                    </button>
+                    <button class="material-template" data-name="Internal flush doors" data-unit="nos">
+                      Internal flush doors
+                    </button>
+                    <button class="material-template" data-name="UPVC windows with glazing" data-unit="sq ft">
+                      UPVC windows with glazing
+                    </button>
+                    <button class="material-template" data-name="Plumbing &amp; sanitary fittings" data-unit="lump sum">
+                      Plumbing &amp; sanitary fittings (lump sum)
+                    </button>
+                    <button class="material-template" data-name="Electrical wiring &amp; fixtures" data-unit="lump sum">
+                      Electrical wiring &amp; fixtures (lump sum)
+                    </button>
+                    <button class="material-template" data-name="Kitchen cabinets &amp; wardrobes" data-unit="sq ft">
+                      Kitchen cabinets &amp; wardrobes
+                    </button>
+                    <button class="material-template" data-name="Site engineer supervision" data-unit="month">
+                      Site engineer supervision
+                    </button>
+                    <button class="material-template" data-name="Architect / design fees" data-unit="lump sum">
+                      Architect / design fees
+                    </button>
+                    <button class="material-template" data-name="Mason labour" data-unit="day">
+                      Mason labour
+                    </button>
+                    <button class="material-template" data-name="Helper labour" data-unit="day">
+                      Helper labour
+                    </button>
+                    <button class="material-template" data-name="Bar bending labour" data-unit="day">
+                      Bar bending labour
+                    </button>
+                    <button class="material-template" data-name="Painting labour" data-unit="sq ft">
+                      Painting labour
+                    </button>
+                    <button class="material-template" data-name="Plumbing labour" data-unit="day">
+                      Plumbing labour
+                    </button>
+                    <button class="material-template" data-name="Electrical labour" data-unit="day">
+                      Electrical labour
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="app-footer">
+        <span>Aurora Design &mdash; Construction Estimator &amp; Invoice (for planning and client communication only)</span>
+      </footer>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+  </html>
+
+
